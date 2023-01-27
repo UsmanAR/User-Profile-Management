@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update</title>
+</head>
+<body>
+    <style>
+        table , th , td{
+    border: 1px solid black;
+}
+    </style>
+    <table>
+        <thead>
+            <tr>
+            <th>Index</th>
+            <th>FirstName</th>
+            <th>MiddleName</th>
+            <th>LastName</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th></th>
+        </thead>
+        </tr>
+        <tbody>
+            <% var index=0; users.forEach(user=>{ %>
+        <tr>
+            <th><%= index+=1 %></th>
+            <td>  <%= user.first_name %> </td>
+            <td>  <%= user.middle_name %> </td>
+            <td>  <%= user.last_name %> </td>
+            <td>  <%= user.email %> </td>
+            <td>  <%= user.role%> </td>
+            <td>  <%= user.department   %> </td>
+            <td> <a href="/edit/<%=user.first_name%>" >Edit</a></td>
+            
+        </tr>
+        <% }) %>
+        </tbody>
+    </table>
+</body>
+</html>

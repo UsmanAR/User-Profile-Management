@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form method="POST" action="/edit/<%= user.first_name%>">
+        FirstName:<input value="<%= user.first_name%>" type="text" id="fname" name="fname" /> <br />
+        MiddleName:<input type="text" id="mname" value="<%= user.middle_name%>" name="mname" /> <br />
+        Lastname:<input type="text" id="lname" name="lname" value="<%= user.last_name%>"/> <br />
+        Email:<input type="text" id="email" name="email" value="<%= user.email%>" /> <br />
+        Role:&nbsp&nbsp&nbsp&nbsp&nbsp<select id="role" name="role">
+        aria-label="Default select example">
+        <option value="<%= user.first_name%>" selected>Admin</option>
+        
+    </select>      <br>
+    Department:<input type="text" value="<%= user.department%>" id="dept"  name="dept"/> <br />
+        <input type="submit">
+      </form>
+</body>
+</html>
