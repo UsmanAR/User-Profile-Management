@@ -1,4 +1,5 @@
 const ejs = require("ejs")
+const jwt = require("jsonwebtoken")
 const express= require('express')
 const mong = require("mongoose");
 const port =  process.env.PORT || 5000;
@@ -13,6 +14,7 @@ mong.connect("mongodb://localhost:27017/Portfolio_db")
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
 
+const secretkey = "SecretKey" 
 
 // Admin/User Schema 
 const schema = new mong.Schema({
@@ -60,6 +62,32 @@ app.get('/view',(req,res)=>{
 //    res.render('update')
 })
 
+app.post('/login',(req,res)=>{
+    const user = {
+        username:req.body.username,
+        password:req.body.password
+    }
+    jwt.sign({user},secretkey,{expiresIn:'100000s'},(err,token)=>{
+        res.send("The token generated is " + token)
+    })
+})
+
+
+app.get('/test',verifyToken,(req,res)=>{
+        res.send("This is test page")
+})
+
+
+function verifyToken(req,res,next){
+            var bearer = req.headers['token'];
+            bearer= bearer.split(" ");
+            req.token = bearer[1];
+            jwt.verify(req.token,secretkey,(err,response)=>{
+            if(!err)next()
+            else res.send("Invalid token")
+        })
+            
+}
 
 app.get('/edit/:name',(req,res)=>{
     user.findOne({first_name:req.params.name}).then((response)=>{
