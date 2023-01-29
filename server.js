@@ -9,7 +9,7 @@ app.use( express.static( "public" ) );
 app.set('view engine','ejs');
 mong.connect("mongodb://localhost:27017/Portfolio_db")
 
-
+var ind=1;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
@@ -18,6 +18,8 @@ const secretkey = "SecretKey"
 
 // Admin/User Schema 
 const schema = new mong.Schema({
+    id:Number,
+    userid:String,
     first_name:String,
     middle_name:String,
     last_name:String,
@@ -32,6 +34,7 @@ const schema = new mong.Schema({
 const user = new mong.model("user",schema)
 
 app.get('/login',(req,res)=>{
+    
     res.render('login')
 })
 
@@ -63,13 +66,23 @@ app.get('/view',(req,res)=>{
 })
 
 app.post('/login',(req,res)=>{
-    const user = {
+    const curr_user = {
         username:req.body.username,
         password:req.body.password
     }
-    jwt.sign({user},secretkey,{expiresIn:'100000s'},(err,token)=>{
-        res.send("The token generated is " + token)
+    user.findOne({username:req.body.username}).then((err,response)=>{
+             if(err){
+                res.send("Invalid username/password")
+             }
+             else{
+                if(req.body.password==response.password){
+                    res.send("Logged in successfully")
+                }
+             }
     })
+    // jwt.sign({curr_user},secretkey,{expiresIn:'100000s'},(err,token)=>{
+    //     res.send("The token generated is " + token)
+    // })
 })
 
 
@@ -143,14 +156,18 @@ app.post('/edit/:name',(req,res)=>{
 app.post('/add',(req,res)=>{
     console.log("The name taken is"  + req.body.fname)
     const new_user = new user({
+        id:ind,
+        userid:req.body.userid,
         first_name:req.body.fname,
         middle_name:req.body.mname,
         last_name:req.body.lname,
         email:req.body.email,
         role:req.body.role,
+        password:req.body.password,
         department:req.body.dept,
 
     })
+    ind+=1;
     new_user.save();
     res.render('add',{
         user:true
