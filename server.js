@@ -40,8 +40,19 @@ const schema = new mong.Schema({
 
 const user = new mong.model("user",schema)
 
-// Login API
 
+function verifyToken(req,res,next){
+    var bearer = req.headers['token'];
+    bearer= bearer.split(" ");
+    req.token = bearer[1];
+    jwt.verify(req.token,secretkey,(err,response)=>{
+    if(!err)next()
+    else res.send("Invalid token")
+})
+    
+}
+
+// Login API
 app.get('/',(req,res)=>{
     res.redirect('/login')
 })
@@ -65,6 +76,7 @@ app.get('/add',(req,res)=>{
     })
 })
 
+// API to view all the users/admins based on the role of user
 app.get('/view',(req,res)=>{
     if(!req.session.authenticated)res.redirect('login')
     var admin = req.session.admin;
@@ -74,7 +86,6 @@ app.get('/view',(req,res)=>{
             admin:admin
         })
     })
-  // res.render('update')
    
 })
 
@@ -85,6 +96,7 @@ app.post('/login',(req,res)=>{
         password:req.body.password
     }
     req.session.loggedin=true;
+    // Verifying the username and passwords,if exists, in the DB
     user.findOne({username:req.body.username}).then((response)=>{
                 if(response!=undefined&&response.password ==req.body.password){
                     if(response.role=="admin")req.session.admin = true;
@@ -98,26 +110,14 @@ app.post('/login',(req,res)=>{
                 }
              
     })
-    // jwt.sign({curr_user},secretkey,{expiresIn:'100000s'},(err,token)=>{
-    //     res.send("The token generated is " + token)
-    // })
 })
 
 
 
-function verifyToken(req,res,next){
-            var bearer = req.headers['token'];
-            bearer= bearer.split(" ");
-            req.token = bearer[1];
-            jwt.verify(req.token,secretkey,(err,response)=>{
-            if(!err)next()
-            else res.send("Invalid token")
-        })
-            
-}
-
+// API to update the user details 
 app.get('/update/:name',(req,res)=>{
     if(!req.session.authenticated)res.redirect('login')
+    // Getting the fields of the document to be updated
     user.findOne({first_name:req.params.name}).then((response)=>{
         res.render('edit',{
             user:response
@@ -127,6 +127,7 @@ app.get('/update/:name',(req,res)=>{
 
 app.post('/update/:name',(req,res)=>{
     if(!req.session.authenticated)res.redirect('login') 
+    // Updating the fields of the already existing document
     user.updateOne({first_name:req.params.name},{
         first_name:req.body.fname,
         middle_name:req.body.mname,
@@ -145,12 +146,13 @@ app.post('/update/:name',(req,res)=>{
     })
 })
 
-
+// API to ADD users/admins
 app.post('/add',async (req,res)=>{
     if(!req.session.authenticated)res.redirect('login')
     var admin = false
     console.log("The name taken is"  + req.body.fname)
     const col= await user.find().limit(1).sort({$natural:-1})
+    // Checking if the username already exists
     const uname = await user.findOne({username:req.body.username});
     if(uname!=null){
         res.render('add',{
@@ -166,6 +168,7 @@ app.post('/add',async (req,res)=>{
    // res.send(col)
     console.log("Value of ind " + ind)
     var new_user; 
+    // Adding new user/admin to the DB
     if(req.session.admin){
     new_user = new user({
         id:ind,
@@ -205,14 +208,16 @@ app.post('/add',async (req,res)=>{
 })
 
 
-// To delete all documents in db 
-app.get('/delete',(req,res)=>{
-    user.deleteMany().then((response=>{
-        res.send("All documents deleted successflly")
-    }))
-})
+// // To delete all documents in db 
+// app.get('/delete',(req,res)=>{
+//     user.deleteMany().then((response=>{
+//         res.send("All documents deleted successflly")
+//     }))
+// })
 
+// API to logout out of current session 
 app.get('/logout',(req,res)=>{
+    // Destroying the current session and logging out
     req.session.destroy();
     res.redirect('/login')
 })
