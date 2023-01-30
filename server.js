@@ -41,21 +41,32 @@ const schema = new mong.Schema({
 const user = new mong.model("user",schema)
 
 // Login API
+
+app.get('/',(req,res)=>{
+    res.redirect('/login')
+})
+
 app.get('/login',(req,res)=>{
-    
-    res.render('login')
+   if(req.session.authenticated)res.send("Already Loggedin. Go to /logout to Logout")
+   else{
+   res.render('login',{
+    loggedin:req.session.authenticated
+   })
+}
 })
 
 // API to add users/admins
 app.get('/add',(req,res)=>{
+    if(!req.session.authenticated)res.redirect('login')
     res.render('add',{
         user:true,
-        admin:req.session.admin
+        admin:req.session.admin,
+        exists:false
     })
 })
 
 app.get('/view',(req,res)=>{
-    if(!req.session.authenticated)res.render('login')
+    if(!req.session.authenticated)res.redirect('login')
     var admin = req.session.admin;
     user.find({}).then((use)=>{
         res.render('update',{
@@ -67,28 +78,20 @@ app.get('/view',(req,res)=>{
    
 })
 
-// app.get('/view',(req,res)=>{
-
-//     user.find({}).then((users)=>{
-//         res.send(users);
-//     }).catch((error)=>{
-//         res.status(500).send(error)
-//     })
-// //    res.render('update')
-// })
 
 app.post('/login',(req,res)=>{
     const curr_user = {
         username:req.body.username,
         password:req.body.password
     }
-
+    req.session.loggedin=true;
     user.findOne({username:req.body.username}).then((response)=>{
                 if(response!=undefined&&response.password ==req.body.password){
                     if(response.role=="admin")req.session.admin = true;
                     else req.session.admin = false
                     req.session.authenticated = true;
-                    res.send("Logged in successfully")
+                    //res.send("Logged in successfully")
+                     res.redirect('view')
                 }
                 else{   
                     res.send("Invalid username/password")
@@ -114,7 +117,7 @@ function verifyToken(req,res,next){
 }
 
 app.get('/update/:name',(req,res)=>{
-    if(!req.session.authenticated)res.render('login')
+    if(!req.session.authenticated)res.redirect('login')
     user.findOne({first_name:req.params.name}).then((response)=>{
         res.render('edit',{
             user:response
@@ -123,7 +126,7 @@ app.get('/update/:name',(req,res)=>{
 })
 
 app.post('/update/:name',(req,res)=>{
-    if(!req.session.authenticated)res.render('login') 
+    if(!req.session.authenticated)res.redirect('login') 
     user.updateOne({first_name:req.params.name},{
         first_name:req.body.fname,
         middle_name:req.body.mname,
@@ -142,37 +145,22 @@ app.post('/update/:name',(req,res)=>{
     })
 })
 
-// app.get('/view/:field',(req,res)=>{
-//     const fields={
-//         1:"first_name",
-//         2:"middle_name",
-//         3:"last_name",
-//         4:"email",
-//         6:"role",
-//         7:"department"
-//     }
-
-//     user.find({}).then((users)=>{
-//         if(req.params.field==5){
-//             res.send("Cannot display password")
-//         }
-//         else if(req.params.field>=1&&req.params.field<=7)
-//         res.send(fields[req.params.field] + " : " + users[0][fields[req.params.field]]);
-//         else res.send("Enter proper field number")
-//     }).catch((error)=>{
-//         res.status(500).send(error)
-//     })
-// //    res.render('update')
-// })
-
-
-
 
 app.post('/add',async (req,res)=>{
-    if(!req.session.authenticated)res.render('login')
+    if(!req.session.authenticated)res.redirect('login')
     var admin = false
     console.log("The name taken is"  + req.body.fname)
     const col= await user.find().limit(1).sort({$natural:-1})
+    const uname = await user.findOne({username:req.body.username});
+    if(uname!=null){
+        res.render('add',{
+            exists:true,
+            user:true,
+            admin:req.session.admin
+        })
+    }
+    else{
+
     if(col[0]!=undefined)ind = col[0]["id"] + 1;     
     else ind=1;
    // res.send(col)
@@ -210,8 +198,10 @@ app.post('/add',async (req,res)=>{
     new_user.save();
     res.render('add',{
         user:true,
-        admin:req.session.admin
+        admin:req.session.admin,
+        exists:false
     })
+}
 })
 
 
@@ -220,6 +210,11 @@ app.get('/delete',(req,res)=>{
     user.deleteMany().then((response=>{
         res.send("All documents deleted successflly")
     }))
+})
+
+app.get('/logout',(req,res)=>{
+    req.session.destroy();
+    res.redirect('/login')
 })
 
 app.listen(port,()=>{
