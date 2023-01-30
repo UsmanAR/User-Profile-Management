@@ -9,8 +9,8 @@ const app=express()
 const path=require('path')
 app.use( express.static( "public" ) );
 app.set('view engine','ejs');
-mong.connect("mongodb://localhost:27017/Portfolio_db")
-
+//mong.connect("mongodb://localhost:27017/Portfolio_db")
+mong.connect("mongodb://uyxoojzraxiek57e83ze:HbRaTm0zfx00UnJcHl6Y@n1-c2-mongodb-clevercloud-customers.services.clever-cloud.com:27017,n2-c2-mongodb-clevercloud-customers.services.clever-cloud.com:27017/bgh3ctwhnvait0k?replicaSet=rs0")
 var ind=1;
 app.use(express.static('views/static'));
 //app.use(express.static(path.join(__dirname, "js")));
