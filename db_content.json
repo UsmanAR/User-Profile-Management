@@ -1,0 +1,1 @@
+{"_id":{"$oid":"63d7eb861cdd4b7ed0aa9c4b"},"id":2,"username":"test","first_name":"test_firstname","middle_name":"test_middlename","last_name":"test_lastname","email":"test@gmail.com","password":"qqqqqq","role":"admin","department":"hr","created_time":{"$date":"2023-01-30T16:08:38.582Z"},"updated_time":{"$date":"2023-01-30T16:08:38.582Z"},"__v":0}
