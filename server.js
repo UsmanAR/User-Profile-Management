@@ -1,25 +1,32 @@
 const ejs = require("ejs")
+const session = require('express-session')
 const jwt = require("jsonwebtoken")
 const express= require('express')
 const mong = require("mongoose");
-const port =  process.env.PORT || 5000;
+const port =  process.env.PORT || 5001;
 const bodyParser = require('body-parser');
 const app=express()
+const path=require('path')
 app.use( express.static( "public" ) );
 app.set('view engine','ejs');
 mong.connect("mongodb://localhost:27017/Portfolio_db")
 
 var ind=1;
-
+app.use(express.static('views/static'));
+//app.use(express.static(path.join(__dirname, "js")));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json());
-
+app.use(session({
+    secret: "session code",
+    saveUninitialized:false 
+}))
+// Secret Key for JWT Token generation
 const secretkey = "SecretKey" 
 
 // Admin/User Schema 
 const schema = new mong.Schema({
     id:Number,
-    userid:String,
+    username:String,
     first_name:String,
     middle_name:String,
     last_name:String,
@@ -33,62 +40,66 @@ const schema = new mong.Schema({
 
 const user = new mong.model("user",schema)
 
+// Login API
 app.get('/login',(req,res)=>{
     
     res.render('login')
 })
 
+// API to add users/admins
 app.get('/add',(req,res)=>{
-
     res.render('add',{
-        user:true
+        user:true,
+        admin:req.session.admin
     })
 })
 
-app.get('/update',(req,res)=>{
+app.get('/view',(req,res)=>{
+    if(!req.session.authenticated)res.render('login')
+    var admin = req.session.admin;
     user.find({}).then((use)=>{
         res.render('update',{
-            users:use
+            users:use,
+            admin:admin
         })
     })
   // res.render('update')
    
 })
 
-app.get('/view',(req,res)=>{
+// app.get('/view',(req,res)=>{
 
-    user.find({}).then((users)=>{
-        res.send(users);
-    }).catch((error)=>{
-        res.status(500).send(error)
-    })
-//    res.render('update')
-})
+//     user.find({}).then((users)=>{
+//         res.send(users);
+//     }).catch((error)=>{
+//         res.status(500).send(error)
+//     })
+// //    res.render('update')
+// })
 
 app.post('/login',(req,res)=>{
     const curr_user = {
         username:req.body.username,
         password:req.body.password
     }
-    user.findOne({username:req.body.username}).then((err,response)=>{
-             if(err){
-                res.send("Invalid username/password")
-             }
-             else{
-                if(req.body.password==response.password){
+
+    user.findOne({username:req.body.username}).then((response)=>{
+                if(response!=undefined&&response.password ==req.body.password){
+                    if(response.role=="admin")req.session.admin = true;
+                    else req.session.admin = false
+                    req.session.authenticated = true;
                     res.send("Logged in successfully")
                 }
-             }
+                else{   
+                    res.send("Invalid username/password")
+                }
+             
     })
     // jwt.sign({curr_user},secretkey,{expiresIn:'100000s'},(err,token)=>{
     //     res.send("The token generated is " + token)
     // })
 })
 
-
-app.get('/test',verifyToken,(req,res)=>{
-        res.send("This is test page")
-})
 
 
 function verifyToken(req,res,next){
@@ -102,7 +113,8 @@ function verifyToken(req,res,next){
             
 }
 
-app.get('/edit/:name',(req,res)=>{
+app.get('/update/:name',(req,res)=>{
+    if(!req.session.authenticated)res.render('login')
     user.findOne({first_name:req.params.name}).then((response)=>{
         res.render('edit',{
             user:response
@@ -110,7 +122,8 @@ app.get('/edit/:name',(req,res)=>{
     })
 })
 
-app.post('/edit/:name',(req,res)=>{
+app.post('/update/:name',(req,res)=>{
+    if(!req.session.authenticated)res.render('login') 
     user.updateOne({first_name:req.params.name},{
         first_name:req.body.fname,
         middle_name:req.body.mname,
@@ -118,10 +131,12 @@ app.post('/edit/:name',(req,res)=>{
         email:req.body.email,
         role:req.body.role,
         department:req.body.dept,
+        updated_time:new Date()
     }).then((response)=>{
         user.find({}).then((use)=>{
             res.render('update',{
-                users:use
+                users:use,
+                admin:req.session.admin
             })
         })
     })
@@ -153,27 +168,59 @@ app.post('/edit/:name',(req,res)=>{
 
 
 
-app.post('/add',(req,res)=>{
+app.post('/add',async (req,res)=>{
+    if(!req.session.authenticated)res.render('login')
+    var admin = false
     console.log("The name taken is"  + req.body.fname)
-    const new_user = new user({
+    const col= await user.find().limit(1).sort({$natural:-1})
+    if(col[0]!=undefined)ind = col[0]["id"] + 1;     
+    else ind=1;
+   // res.send(col)
+    console.log("Value of ind " + ind)
+    var new_user; 
+    if(req.session.admin){
+    new_user = new user({
         id:ind,
-        userid:req.body.userid,
+        username:req.body.username,
         first_name:req.body.fname,
         middle_name:req.body.mname,
         last_name:req.body.lname,
         email:req.body.email,
         role:req.body.role,
-        password:req.body.password,
+        password:req.body.passwd,
         department:req.body.dept,
-
+        created_time:new Date(),
+        updated_time:new Date()
     })
-    ind+=1;
+} else{
+    new_user = new user({
+        id:ind,
+        username:req.body.username,
+        first_name:req.body.fname,
+        middle_name:req.body.mname,
+        last_name:req.body.lname,
+        email:req.body.email,
+        role:"user",
+        password:req.body.passwd,
+        department:req.body.dept,
+        created_time:new Date(),
+        updated_time:new Date()
+    })  
+}
     new_user.save();
     res.render('add',{
-        user:true
+        user:true,
+        admin:req.session.admin
     })
 })
 
+
+// To delete all documents in db 
+app.get('/delete',(req,res)=>{
+    user.deleteMany().then((response=>{
+        res.send("All documents deleted successflly")
+    }))
+})
 
 app.listen(port,()=>{
 

@@ -1,30 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="JS/validate.js"></script>
     <title>Add</title>
   </head>
   <body>
-    <% if(user) { %>
-    <input type="submit" value="Admin" />
-    <input type="submit" value="User" />
-    <% } else { %>
 
-    <input type="submit" value="User" />
-    <% } %>
     <form method="POST" action="/add">
-      Username:<input type="text" id="userid" name="userid" /> <br />
+      Username:<input type="text" id="username" name="username" /> <br />
       FirstName:<input type="text" id="fname" name="fname" /> <br />
       MiddleName:<input type="text" id="mname" name="mname" /> <br />
       Lastname:<input type="text" id="lname" name="lname"/> <br />
       Email:<input type="text" id="email" name="email"/> <br />
-      Password:<input type="text" id="passwd" name="passwd"/> <br />
-      Confirm-Password:<input type="text" id="username"  name="username"/> <br />
+      Password:<input type="password"  id="passwd" oninvalid="alert('Must contain 6-12 characters');"  pattern=".{6,12}" name="passwd"/> <br />
+      Confirm-Password:<input onkeyup="validator();"   pattern=".{6,12}" type="password" id="conf_passwd"/> <br />
+      <span id="warning" style="display: none;">Passwords do not match</span><br>
       Role:&nbsp&nbsp&nbsp&nbsp&nbsp<select id="role" name="role">
       aria-label="Default select example">
-      <option value="admin">Admin</option>
+      <% if(admin) { %> <option value="admin">Admin</option> <% } %>
       <option value="user">User</option>
   </select>      <br>
   Department:<input type="text" id="dept"  name="dept"/> <br />

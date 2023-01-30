@@ -27,7 +27,7 @@
         </thead>
         </tr>
         <tbody>
-            <% var index=0; users.forEach(user=>{ %>
+            <% var index=0; users.forEach(user=>{  if(admin||!admin&&user.role=="user"){ %>
         <tr>
             <th><%= index+=1 %></th>
             <td>  <%= user.first_name %> </td>
@@ -36,10 +36,10 @@
             <td>  <%= user.email %> </td>
             <td>  <%= user.role%> </td>
             <td>  <%= user.department   %> </td>
-            <td> <a href="/edit/<%=user.first_name%>" >Edit</a></td>
+            <td> <a href="/update/<%=user.first_name%>" >Edit</a></td>
             
         </tr>
-        <% }) %>
+        <%} }) %>
         </tbody>
     </table>
 </body>
